@@ -1,6 +1,10 @@
+from fastapi import FastAPI, Query
+from typing import List
 import asyncio
 from urllib.parse import quote
 from playwright.async_api import async_playwright
+
+app = FastAPI()
 
 SEARCH_URL = "https://spinetohogar.com/search?options%5Bprefix%5D=last&q="
 
@@ -20,7 +24,6 @@ async def get_text(page, selectors):
 def normalize_sku(s: str) -> str:
     return (s or "").strip().lower().replace(" ", "").replace("#", "")
 
-# --- extractor de SKU ---
 async def extract_sku(page):
     sku_raw = await get_text(page, [
         "span.product__sku.fs-body-50.t-opacity-70",
@@ -33,7 +36,6 @@ async def extract_sku(page):
         return ""
     return sku_raw.replace("SKU:", "").strip()
 
-# --- extractor de imagen principal ---
 async def extract_image_url(page):
     imgs = await page.query_selector_all("img")
     for img in imgs:
@@ -46,10 +48,8 @@ async def extract_image_url(page):
             return src
     return "No disponible"
 
-# --- extractor de precio robusto ---
 async def extract_price(page):
     try:
-        # Esperar a que aparezca el span con clase mw-price
         await page.wait_for_selector("span.mw-price", timeout=8000)
         el = await page.query_selector("span.mw-price")
         if el:
@@ -59,7 +59,6 @@ async def extract_price(page):
     except:
         pass
 
-    # Fallback: meta og:price:amount
     try:
         meta = await page.query_selector("meta[property='og:price:amount']")
         if meta:
@@ -89,8 +88,7 @@ async def extract_product_details(page, url, sku_input):
         "image_url": image_url,
     }
 
-# --- flujo principal ---
-async def buscar_por_skus(lista_skus, headless=False):
+async def buscar_por_skus(lista_skus, headless=True):
     resultados = []
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=headless)
@@ -139,23 +137,7 @@ async def buscar_por_skus(lista_skus, headless=False):
         await browser.close()
     return resultados
 
-# --- Prueba ---
-if __name__ == "__main__":
-    async def main():
-        skus = ["N55028"]  # lista de SKUs a buscar
-        resultados = await buscar_por_skus(skus, headless=False)
-
-        # Ordenar por SKU
-        resultados_ordenados = sorted(resultados, key=lambda x: x.get("sku", ""))
-
-        print("\n--- Resultados ordenados por SKU ---")
-        for r in resultados_ordenados:
-            print(f"SKU: {r['sku']}")
-            print(f"Nombre: {r['name']}")
-            print(f"Precio: {r['price']}")
-            print(f"Marca: {r['brand']}")
-            print(f"URL: {r['url']}")
-            print(f"Imagen: {r['image_url']}")
-            print("-" * 60)
-
-    asyncio.run(main())
+# --- API endpoint ---
+@app.get("/buscar")
+async def buscar(skus: List[str] = Query(...)):
+    return await buscar_por_skus(skus)
