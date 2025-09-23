@@ -3,6 +3,9 @@ from typing import List
 import asyncio
 from urllib.parse import quote
 from playwright.async_api import async_playwright
+import os
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/playwright"
+
 
 app = FastAPI()
 
@@ -141,3 +144,4 @@ async def buscar_por_skus(lista_skus, headless=True):
 @app.get("/buscar")
 async def buscar(skus: List[str] = Query(...)):
     return await buscar_por_skus(skus)
+
