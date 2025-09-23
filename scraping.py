@@ -2,6 +2,8 @@ import os
 import asyncio
 from urllib.parse import quote
 from fastapi import FastAPI, Query
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from typing import List
 from playwright.async_api import async_playwright
 
@@ -12,7 +14,7 @@ app = FastAPI()
 
 SEARCH_URL = "https://spinetohogar.com/search?options%5Bprefix%5D=last&q="
 
-# --- helpers ---
+# --- Helpers ---
 async def get_text(page, selectors):
     for sel in selectors:
         try:
@@ -141,7 +143,11 @@ async def buscar_por_skus(lista_skus, headless=True):
         await browser.close()
     return resultados
 
-# --- Endpoint principal ---
+# --- Modelo para POST ---
+class SKURequest(BaseModel):
+    skus: List[str]
+
+# --- Endpoint GET ---
 @app.get("/buscar")
 async def buscar(skus: List[str] = Query(...)):
     try:
@@ -149,7 +155,15 @@ async def buscar(skus: List[str] = Query(...)):
     except Exception as e:
         return {"error": str(e)}
 
-# --- Ruta raíz opcional ---
+# --- Endpoint POST ---
+@app.post("/buscar")
+async def buscar_post(data: SKURequest):
+    try:
+        return await buscar_por_skus(data.skus)
+    except Exception as e:
+        return {"error": str(e)}
+
+# --- Ruta raíz ---
 @app.get("/")
 def home():
-    return {"message": "Bienvenido a la API de scraping. Usa /buscar?skus=... para consultar."}
+    return {"message": "Bienvenido a la API de scraping. Usa /buscar?skus=... o POST /buscar para consultar."}
