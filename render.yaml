@@ -2,15 +2,18 @@ services:
   - type: web
     name: fastapi-playwright-app
     env: python
-    region: oregon  # Puedes cambiarlo si lo deseas
+    region: oregon
     plan: free
     buildCommand: |
       pip install -r requirements.txt
+      export PLAYWRIGHT_BROWSERS_PATH=./playwright-browsers
       playwright install
-    startCommand: uvicorn main:scraping --host 0.0.0.0 --port 10000
+    startCommand: |
+      export PLAYWRIGHT_BROWSERS_PATH=./playwright-browsers
+      uvicorn main:scraping --host 0.0.0.0 --port 10000
     envVars:
       - key: PLAYWRIGHT_BROWSERS_PATH
-        value: /tmp/playwright
+        value: ./playwright-browsers
 
 
 
