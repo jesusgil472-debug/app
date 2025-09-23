@@ -1,4 +1,2 @@
 flask
 playwright
-uvicorn
-
