@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Query
-from typing import List
+import os
 import asyncio
 from urllib.parse import quote
+from fastapi import FastAPI, Query
+from typing import List
 from playwright.async_api import async_playwright
-import os
-os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/playwright"
 
+# Configuración para Render
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/playwright"
 
 app = FastAPI()
 
@@ -140,8 +141,15 @@ async def buscar_por_skus(lista_skus, headless=True):
         await browser.close()
     return resultados
 
-# --- API endpoint ---
+# --- Endpoint principal ---
 @app.get("/buscar")
 async def buscar(skus: List[str] = Query(...)):
-    return await buscar_por_skus(skus)
+    try:
+        return await buscar_por_skus(skus)
+    except Exception as e:
+        return {"error": str(e)}
 
+# --- Ruta raíz opcional ---
+@app.get("/")
+def home():
+    return {"message": "Bienvenido a la API de scraping. Usa /buscar?skus=... para consultar."}
