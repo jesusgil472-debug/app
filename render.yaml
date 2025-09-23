@@ -5,4 +5,5 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       playwright install
-    startCommand: uvicorn scraping:app --host=0.0.0.0 --port=10000
+   startCommand: python -m uvicorn scraping:app --host=0.0.0.0 --port=10000
+
