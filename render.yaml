@@ -2,17 +2,12 @@ services:
   - type: web
     name: scraping-api
     env: python
+    region: oregon
+    plan: free
     buildCommand: |
       pip install -r requirements.txt
-      PLAYWRIGHT_BROWSERS_PATH=./playwright-browsers playwright install
-    startCommand: |
-      PLAYWRIGHT_BROWSERS_PATH=./playwright-browsers python -m uvicorn scraping:app --host=0.0.0.0 --port=10000
-    envVars:
-      - key: PLAYWRIGHT_BROWSERS_PATH
-        value: ./playwright-browsers
-
-
-
+      python -m pyppeteer install
+    startCommand: python -m uvicorn scraping:app --host=0.0.0.0 --port=10000
 
 
 
